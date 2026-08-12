@@ -1,0 +1,7 @@
+[submodule "third_party/box3d"]
+	path = third_party/box3d
+	url = https://github.com/Asphaltian/box3d.git
+	branch = openrbx
+[submodule "third_party/minhook"]
+	path = third_party/minhook
+	url = https://github.com/TsudaKageyu/minhook.git
