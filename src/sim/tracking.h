@@ -68,8 +68,8 @@ inline bool apart(const rbx::Vector3& first, const rbx::Vector3& second, float t
 	       std::fabs(first.z - second.z) > tolerance;
 }
 
-inline bool apart(const rbx::CoordinateFrame& first, const rbx::CoordinateFrame& second, float studs,
-                  float rotation) noexcept
+inline bool
+apart(const rbx::CoordinateFrame& first, const rbx::CoordinateFrame& second, float studs, float rotation) noexcept
 {
 	if (apart(first.translation, second.translation, studs)) {
 		return true;

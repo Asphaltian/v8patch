@@ -27,8 +27,9 @@ void restitutionFollowsTheLadder()
 	near(getRestitution(0.7F, 0, 0.7F, 0), std::sqrt(0.80F), 1.0e-6F, "elasticity 0.70 bounces at sqrt 0.80");
 	near(getRestitution(1.0F, 0, 1.0F, 0), 1.0F, 1.0e-6F, "elasticity 1.00 bounces at one");
 
-	near(getRestitution(1.0F, 0, 0.0F, 0), std::sqrt(0.28F), 1.0e-6F,
-	     "a dead surface kills the bounce of a lively one");
+	near(
+	    getRestitution(1.0F, 0, 0.0F, 0), std::sqrt(0.28F), 1.0e-6F, "a dead surface kills the bounce of a lively one"
+	);
 
 	for (int i = 0; i <= 10; ++i) {
 		const float e = getRestitution(static_cast<float>(i) / 10.0F, 0, 1.0F, 0);
@@ -68,8 +69,12 @@ void dampingInvertsTheBiasRate()
 	const float damping = getContactDamping(hertz, substepDt);
 
 	check(damping > 0.0F, "the derived damping is positive");
-	near(getBiasRate(hertz, damping, substepDt), Constants::contactBiasRate(), 1.0e-2F,
-	     "the derived damping reproduces the engine recovery rate");
+	near(
+	    getBiasRate(hertz, damping, substepDt),
+	    Constants::contactBiasRate(),
+	    1.0e-2F,
+	    "the derived damping reproduces the engine recovery rate"
+	);
 }
 
 } // namespace

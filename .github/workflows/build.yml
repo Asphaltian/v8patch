@@ -1,0 +1,58 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Report the toolchain
+        run: |
+          cmake --version
+          ninja --version
+
+      - name: Configure
+        run: cmake --preset x86
+
+      - name: Assert the build type
+        run: |
+          $cache = Select-String -Path build/x86/CMakeCache.txt -Pattern '^CMAKE_BUILD_TYPE:STRING=(.*)$'
+          $type = $cache.Matches[0].Groups[1].Value
+          if ($type -ne 'RelWithDebInfo') { throw "expected RelWithDebInfo, got $type" }
+
+      - name: Build
+        run: cmake --build --preset x86
+
+      - name: Test
+        run: ctest --test-dir build/x86 --output-on-failure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v8patch
+          path: |
+            build/x86/dbghelp.dll
+            build/x86/dbghelp.pdb
+            v8patch.ini
+
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: pip install clang-format==20.1.8
+
+      - name: Check formatting
+        run: clang-format --dry-run --Werror $(find src tests -name '*.cpp' -o -name '*.h')

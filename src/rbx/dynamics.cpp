@@ -55,9 +55,9 @@ CoordinateFrame inverse(const CoordinateFrame& frame) noexcept
 			at(out.rotation, row, column) = at(frame.rotation, column, row);
 		}
 
-		at(out.translation, row) = -(at(out.rotation, row, 0) * frame.translation.x +
-		                             at(out.rotation, row, 1) * frame.translation.y +
-		                             at(out.rotation, row, 2) * frame.translation.z);
+		at(out.translation, row) =
+		    -(at(out.rotation, row, 0) * frame.translation.x + at(out.rotation, row, 1) * frame.translation.y +
+		      at(out.rotation, row, 2) * frame.translation.z);
 	}
 
 	return out;
@@ -259,9 +259,10 @@ void publishRoot(Body* body) noexcept
 	Vector3 arm{};
 
 	for (int row = 0; row < 3; ++row) {
-		at(arm, row) = -(at(pv.position.rotation, row, 0) * cofm->cofmInBody.x +
-		                 at(pv.position.rotation, row, 1) * cofm->cofmInBody.y +
-		                 at(pv.position.rotation, row, 2) * cofm->cofmInBody.z);
+		at(arm, row) =
+		    -(at(pv.position.rotation, row, 0) * cofm->cofmInBody.x +
+		      at(pv.position.rotation, row, 1) * cofm->cofmInBody.y +
+		      at(pv.position.rotation, row, 2) * cofm->cofmInBody.z);
 	}
 
 	body->pv.position.translation.x = pv.position.translation.x + arm.x;
@@ -269,9 +270,12 @@ void publishRoot(Body* body) noexcept
 	body->pv.position.translation.z = pv.position.translation.z + arm.z;
 
 	body->pv.velocity.rotational = pv.velocity.rotational;
-	body->pv.velocity.linear.x = pv.velocity.linear.x + (pv.velocity.rotational.y * arm.z - pv.velocity.rotational.z * arm.y);
-	body->pv.velocity.linear.y = pv.velocity.linear.y + (pv.velocity.rotational.z * arm.x - pv.velocity.rotational.x * arm.z);
-	body->pv.velocity.linear.z = pv.velocity.linear.z + (pv.velocity.rotational.x * arm.y - pv.velocity.rotational.y * arm.x);
+	body->pv.velocity.linear.x =
+	    pv.velocity.linear.x + (pv.velocity.rotational.y * arm.z - pv.velocity.rotational.z * arm.y);
+	body->pv.velocity.linear.y =
+	    pv.velocity.linear.y + (pv.velocity.rotational.z * arm.x - pv.velocity.rotational.x * arm.z);
+	body->pv.velocity.linear.z =
+	    pv.velocity.linear.z + (pv.velocity.rotational.x * arm.y - pv.velocity.rotational.y * arm.x);
 }
 
 } // namespace v8patch::rbx

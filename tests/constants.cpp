@@ -18,9 +18,10 @@ void stepRates()
 	check(Constants::worldStepsPerUiStep() == 8, "8 world steps to a ui step");
 	check(Constants::kernelStepsPerUiStep() == 152, "152 kernel steps to a ui step");
 
-	check(Constants::worldStepsPerUiStep() * Constants::kernelStepsPerWorldStep() ==
-	          Constants::kernelStepsPerUiStep(),
-	      "kernel steps per ui step is the product of the two rates");
+	check(
+	    Constants::worldStepsPerUiStep() * Constants::kernelStepsPerWorldStep() == Constants::kernelStepsPerUiStep(),
+	    "kernel steps per ui step is the product of the two rates"
+	);
 
 	near(Constants::worldDt() * Constants::worldStepsPerSec(), 1.0F, 1.0e-5F, "world dt inverts its rate");
 	near(Constants::kernelDt() * Constants::kernelStepsPerSec(), 1.0F, 1.0e-5F, "kernel dt inverts its rate");
@@ -49,12 +50,20 @@ void jointStiffness()
 {
 	// RBX::Constants::getJointK: a 21x1.2x1 plank sorts to (1, 1.2, 21), clips to
 	// at least one stud, and takes the size.z * 0.4 branch of the multiplier table.
-	near(Constants::jointK(Vector3{21.0F, 1.2F, 1.0F}, false), 21.0F * 0.4F * 960000.0F, 1.0F,
-	     "a 21x1.2x1 plank stiffens to 8064000");
+	near(
+	    Constants::jointK(Vector3{21.0F, 1.2F, 1.0F}, false),
+	    21.0F * 0.4F * 960000.0F,
+	    1.0F,
+	    "a 21x1.2x1 plank stiffens to 8064000"
+	);
 
 	// A cube of one stud takes the 0.91 entry.
-	near(Constants::jointK(Vector3{1.0F, 1.0F, 1.0F}, false), 0.91F * 960000.0F, 1.0F,
-	     "a one stud cube stiffens to 873600");
+	near(
+	    Constants::jointK(Vector3{1.0F, 1.0F, 1.0F}, false),
+	    0.91F * 960000.0F,
+	    1.0F,
+	    "a one stud cube stiffens to 873600"
+	);
 
 	// Below a stud the smallest axis scales the result down.
 	const float thin = Constants::jointK(Vector3{0.4F, 1.0F, 1.0F}, false);
@@ -66,8 +75,12 @@ void jointStiffness()
 void sleepThreshold()
 {
 	// sleepTolerance * weight / (1 - weight) * worldStepsPerSec
-	near(Constants::sleepVelocity(), 0.02F * 0.25F / 0.75F * 240.0F, 1.0e-4F,
-	     "sleep velocity follows the running average");
+	near(
+	    Constants::sleepVelocity(),
+	    0.02F * 0.25F / 0.75F * 240.0F,
+	    1.0e-4F,
+	    "sleep velocity follows the running average"
+	);
 }
 
 } // namespace

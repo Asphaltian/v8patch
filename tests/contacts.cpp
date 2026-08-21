@@ -31,8 +31,7 @@ int collide(const Vector3& sizeA, const Vector3& sizeB, const b3Vec3& offset)
 
 	manifold.points = points;
 
-	b3CollideHulls(&manifold, B3_MAX_MANIFOLD_POINTS, &a.base, &b.base,
-	               b3Transform{offset, b3Quat_identity}, &cache);
+	b3CollideHulls(&manifold, B3_MAX_MANIFOLD_POINTS, &a.base, &b.base, b3Transform{offset, b3Quat_identity}, &cache);
 
 	return manifold.pointCount;
 }
@@ -44,8 +43,7 @@ void separatedShapesMakeNoContact()
 	check(collide(cube, cube, b3Vec3{0.0F, 1.9F, 0.0F}) > 0, "boxes overlapping by 0.1 studs touch");
 	check(collide(cube, cube, b3Vec3{0.0F, 2.0F, 0.0F}) > 0, "boxes exactly flush still touch");
 	check(collide(cube, cube, b3Vec3{0.0F, 2.1F, 0.0F}) == 0, "boxes 0.1 studs apart do not touch");
-	check(collide(cube, cube, b3Vec3{0.0F, 2.3F, 0.0F}) == 0,
-	      "boxes inside the speculative margin still do not touch");
+	check(collide(cube, cube, b3Vec3{0.0F, 2.3F, 0.0F}) == 0, "boxes inside the speculative margin still do not touch");
 	check(collide(cube, cube, b3Vec3{0.0F, 6.0F, 0.0F}) == 0, "boxes far apart do not touch");
 }
 
@@ -58,11 +56,12 @@ void flushFacesMakeNoContact()
 
 	// The plank is braked while it is still a third of a stud clear of the post,
 	// which is the case that mattered: it is strictly separated there.
-	check(collide(plank, post, b3Vec3{5.5F, -6.2F, 1.9F}) == 0,
-	      "a plank clear of a post makes no contact");
+	check(collide(plank, post, b3Vec3{5.5F, -6.2F, 1.9F}) == 0, "a plank clear of a post makes no contact");
 
-	check(collide(plank, post, b3Vec3{5.5F, -6.59F, 1.49F}) > 0,
-	      "the same pair overlapping by 0.01 studs does make contact");
+	check(
+	    collide(plank, post, b3Vec3{5.5F, -6.59F, 1.49F}) > 0,
+	    "the same pair overlapping by 0.01 studs does make contact"
+	);
 }
 
 // Bricks laid exactly on top of one another, as a place and the arena both do.
