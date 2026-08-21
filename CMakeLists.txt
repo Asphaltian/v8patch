@@ -42,6 +42,7 @@ target_compile_definitions(box3d PRIVATE B3_RESTITUTION_ITERATIONS=${V8PATCH_RES
 
 add_library(v8patch SHARED
   src/config.cpp
+  src/frame.cpp
   src/dllmain.cpp
   src/hook.cpp
   src/log.cpp
@@ -93,8 +94,10 @@ add_executable(v8patch_tests
   tests/contactlaw.cpp
   tests/contacts.cpp
   tests/hashing.cpp
+  tests/frame.cpp
   tests/stepping.cpp
   tests/winding.cpp
+  src/frame.cpp
   src/rbx/constants.cpp
 )
 

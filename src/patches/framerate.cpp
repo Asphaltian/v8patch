@@ -1,11 +1,12 @@
-#include <windows.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <string_view>
 
 #include "config.h"
+#include "frame.h"
 #include "hook.h"
 #include "log.h"
 #include "offsets.h"
@@ -14,33 +15,58 @@
 #include "rbx/engine.h"
 
 namespace v8patch {
+
 namespace {
 
 constexpr std::string_view kSection = "framerate";
 
 constexpr int kDefaultFps = 60;
-constexpr float kUnlimitedPeriod = 0.0F;
-constexpr double kMaxCatchUp = rbx::Constants::uiDt();
+constexpr float kUncapped = 0.0F;
 
-namespace pacer {
+bool g_atUiStep = false;
+Frame g_uiFrame;
+UiStep g_uiStep;
 
-using CtorFn = void*(__fastcall*)(void*, void*);
-using ThisOnlyFn = void(__fastcall*)(void*, void*);
+void advanceUiStep() noexcept
+{
+	const float frame = g_uiFrame.elapsed();
+
+	g_atUiStep = g_uiStep.ready(frame, frame);
+}
+
+bool atUiStep() noexcept
+{
+	return g_atUiStep;
+}
+
+float uiStepPhase() noexcept
+{
+	return std::min(1.0F, g_uiStep.waited() / rbx::Constants::uiDt());
+}
+
+namespace runservice {
+
+using ConstructFn = void*(__fastcall*)(void*, void*);
+using InvalidateFn = void(__fastcall*)(void*, void*);
 using RunProcFn = void(__fastcall*)(void*, void*, void*, void*);
+using RaiseFn = void(__fastcall*)(void*, void*, float, float);
 
-std::atomic<float> g_period{1.0F / static_cast<float>(kDefaultFps)};
+std::atomic<float> g_framePeriod{1.0F / static_cast<float>(kDefaultFps)};
 std::atomic<bool> g_announced{false};
 
-CtorFn g_construct = nullptr;
-ThisOnlyFn g_invalidate = nullptr;
-RunProcFn g_run = nullptr;
+ConstructFn g_construct = nullptr;
+InvalidateFn g_invalidate = nullptr;
+RunProcFn g_runProc = nullptr;
+RaiseFn g_raiseStepped = nullptr;
+
+Pacer g_stepped;
 
 void configure()
 {
 	int fps = config::integer(kSection, "fps", kDefaultFps);
 
 	if (fps == 0) {
-		g_period.store(kUnlimitedPeriod, std::memory_order_relaxed);
+		g_framePeriod.store(kUncapped, std::memory_order_relaxed);
 		log::info("frame rate uncapped");
 		return;
 	}
@@ -50,18 +76,18 @@ void configure()
 		fps = kDefaultFps;
 	}
 
-	g_period.store(1.0F / static_cast<float>(fps), std::memory_order_relaxed);
+	g_framePeriod.store(1.0F / static_cast<float>(fps), std::memory_order_relaxed);
 	log::info("target {} fps", fps);
 }
 
-void impose(void* self)
+void impose(void* service)
 {
-	if (self == nullptr) {
+	if (service == nullptr) {
 		return;
 	}
 
-	auto* slot = reinterpret_cast<float*>(static_cast<std::byte*>(self) + offsets::RunService::kFramePeriod);
-	const float wanted = g_period.load(std::memory_order_relaxed);
+	auto* slot = reinterpret_cast<float*>(static_cast<std::byte*>(service) + offsets::RunService::kFramePeriod);
+	const float wanted = g_framePeriod.load(std::memory_order_relaxed);
 
 	if (*slot == wanted) {
 		return;
@@ -75,24 +101,31 @@ void impose(void* self)
 	}
 }
 
-void* __fastcall onConstruct(void* self, void* edx)
+void* __fastcall onConstruct(void* service, void* edx)
 {
-	void* result = g_construct(self, edx);
-	impose(self);
+	void* result = g_construct(service, edx);
+	impose(service);
 
 	return result;
 }
 
-void __fastcall onInvalidate(void* self, void* edx)
+void __fastcall onInvalidateRunViews(void* service, void* edx)
 {
-	impose(self);
-	g_invalidate(self, edx);
+	impose(service);
+	g_invalidate(service, edx);
 }
 
-void __fastcall onRun(void* self, void* edx, void* px, void* pn)
+void __fastcall onRunProc(void* service, void* edx, void* dataModel, void* holder)
 {
-	impose(self);
-	g_run(self, edx, px, pn);
+	impose(service);
+	g_runProc(service, edx, dataModel, holder);
+}
+
+void __fastcall onRaiseStepped(void* service, void* edx, float elapsed, float step)
+{
+	if (g_stepped.ready(step)) {
+		g_raiseStepped(service, edx, elapsed, g_stepped.delivered());
+	}
 }
 
 bool install(HookSet& hooks)
@@ -100,95 +133,310 @@ bool install(HookSet& hooks)
 	using namespace offsets::RunService;
 
 	return hooks.install(kConstructor, &onConstruct, g_construct) &&
-	       hooks.install(kInvalidateRunViews, &onInvalidate, g_invalidate) && hooks.install(kRunProc, &onRun, g_run);
+	       hooks.install(kInvalidateRunViews, &onInvalidateRunViews, g_invalidate) &&
+	       hooks.install(kRunProc, &onRunProc, g_runProc) &&
+	       hooks.install(kRaiseStepped, &onRaiseStepped, g_raiseStepped);
 }
 
-} // namespace pacer
+} // namespace runservice
 
-namespace worldclock {
+namespace scriptcontext {
+
+using HeartbeatFn = void(__fastcall*)(void*, void*, void*, float, float);
+
+HeartbeatFn g_onHeartbeat = nullptr;
+
+Pacer g_heartbeat;
+
+void __fastcall onHeartbeat(void* self, void* edx, void* service, float elapsed, float step)
+{
+	if (g_heartbeat.ready(step)) {
+		g_onHeartbeat(self, edx, service, elapsed, g_heartbeat.delivered());
+	}
+}
+
+bool install(HookSet& hooks)
+{
+	return hooks.install(offsets::ScriptContext::kOnHeartbeat, &onHeartbeat, g_onHeartbeat);
+}
+
+} // namespace scriptcontext
+
+namespace shoottool {
+
+using StepFn = void(__fastcall*)(void*, void*, void*);
+
+StepFn g_step = nullptr;
+
+Pacer g_reload;
+
+void __fastcall onStep(void* tool, void* edx, void* mouse)
+{
+	if (g_reload.ready()) {
+		g_step(tool, edx, mouse);
+	}
+}
+
+bool install(HookSet& hooks)
+{
+	return hooks.install(offsets::ShootTool::kStep, &onStep, g_step);
+}
+
+} // namespace shoottool
+
+namespace forcefield {
+
+using StepFn = void(__fastcall*)(void*, void*, void*);
+
+StepFn g_step = nullptr;
+
+Pacer g_flash;
+
+void __fastcall onStep(void* self, void* edx, void* part)
+{
+	auto* phase = reinterpret_cast<int*>(static_cast<std::byte*>(self) + offsets::ForceField::kPhase);
+	const int held = *phase;
+	const bool advance = g_flash.ready();
+
+	g_step(self, edx, part);
+
+	if (!advance) {
+		*phase = held;
+	}
+}
+
+bool install(HookSet& hooks)
+{
+	return hooks.install(offsets::ForceField::kStep, &onStep, g_step);
+}
+
+} // namespace forcefield
+
+namespace humanoid {
+
+using WalkFn = void(__fastcall*)(void*, void*, const rbx::Vector3*);
+
+WalkFn g_setWalkDirection = nullptr;
+
+struct Walk
+{
+	void* humanoid = nullptr;
+	rbx::Vector3 direction;
+};
+
+Walk g_walks[16];
+
+Walk* find(void* humanoid) noexcept
+{
+	for (Walk& walk : g_walks) {
+		if (walk.humanoid == humanoid) {
+			return &walk;
+		}
+
+		if (walk.humanoid == nullptr) {
+			walk.humanoid = humanoid;
+			return &walk;
+		}
+	}
+
+	return nullptr;
+}
+
+void __fastcall onSetWalkDirection(void* self, void* edx, const rbx::Vector3* direction)
+{
+	Walk* walk = find(self);
+
+	if (walk == nullptr) {
+		g_setWalkDirection(self, edx, direction);
+		return;
+	}
+
+	if (atUiStep()) {
+		walk->direction = *direction;
+	}
+
+	g_setWalkDirection(self, edx, &walk->direction);
+
+	std::memcpy(
+	    &walk->direction, static_cast<std::byte*>(self) + offsets::Humanoid::kWalkDirection, sizeof(walk->direction)
+	);
+}
+
+bool install(HookSet& hooks)
+{
+	return hooks.install(offsets::Humanoid::kSetWalkDirection, &onSetWalkDirection, g_setWalkDirection);
+}
+
+} // namespace humanoid
+
+namespace character {
+
+using UpdateFn = void(__fastcall*)(void*, void*, void*, void*);
+
+UpdateFn g_update = nullptr;
+
+void __fastcall onUpdate(void* subject, void* edx, void* goal, void* focus)
+{
+	if (atUiStep()) {
+		g_update(subject, edx, goal, focus);
+	}
+}
+
+bool install(HookSet& hooks)
+{
+	return hooks.install(offsets::ICharacterSubject::kUpdate, &onUpdate, g_update);
+}
+
+} // namespace character
+
+namespace camera {
+
+using UpdateGoalFn = void(__fastcall*)(void*, void*);
+using KeyMoveFn = void(__fastcall*)(void*, void*, const char*, int);
+using ApplyGoalFn = void(__fastcall*)(void*, void*);
+using LerpFn = void*(__fastcall*)(void*, void*, void*, const float*, float);
+
+UpdateGoalFn g_updateGoal = nullptr;
+KeyMoveFn g_keyMove = nullptr;
+ApplyGoalFn g_applyGoal = nullptr;
+LerpFn g_lerp = nullptr;
+
+Frame g_moved;
+KeyHold g_held;
+
+rbx::CoordinateFrame g_fromGoal;
+rbx::CoordinateFrame g_toGoal;
+bool g_primed = false;
+
+void advanceGoal(const void* self) noexcept
+{
+	g_fromGoal = g_toGoal;
+	std::memcpy(&g_toGoal, static_cast<const std::byte*>(self) + offsets::Camera::kGoal, sizeof(g_toGoal));
+
+	if (!g_primed) {
+		g_fromGoal = g_toGoal;
+		g_primed = true;
+	}
+}
+
+void snapGoal(const void* self) noexcept
+{
+	advanceGoal(self);
+	g_fromGoal = g_toGoal;
+}
+
+rbx::Vector3 translation(const void* camera, std::uintptr_t offset) noexcept
+{
+	rbx::Vector3 value{};
+	std::memcpy(&value, static_cast<const std::byte*>(camera) + offset, sizeof(value));
+
+	return value;
+}
+
+void keepShare(void* camera, std::uintptr_t offset, const rbx::Vector3& before, float share) noexcept
+{
+	const rbx::Vector3 after = translation(camera, offset);
+	const rbx::Vector3 value{
+	    before.x + (after.x - before.x) * share,
+	    before.y + (after.y - before.y) * share,
+	    before.z + (after.z - before.z) * share,
+	};
+
+	std::memcpy(static_cast<std::byte*>(camera) + offset, &value, sizeof(value));
+}
+
+void __fastcall onKeyMove(void* self, void* edx, const char* keys, int calls)
+{
+	using namespace offsets::Camera;
+
+	if (calls == 0) {
+		g_held.release();
+	}
+
+	const float share = g_held.advance(g_moved.elapsed());
+
+	const rbx::Vector3 goal = translation(self, kGoalTranslation);
+	const rbx::Vector3 focus = translation(self, kFocusTranslation);
+
+	g_keyMove(self, edx, keys, g_held.calls());
+
+	keepShare(self, kGoalTranslation, goal, share);
+	keepShare(self, kFocusTranslation, focus, share);
+
+	g_applyGoal(self, edx);
+	snapGoal(self);
+}
+
+void __fastcall onUpdateGoal(void* self, void* edx)
+{
+	advanceUiStep();
+
+	if (!atUiStep() && g_primed) {
+		return;
+	}
+
+	g_updateGoal(self, edx);
+	advanceGoal(self);
+}
+
+void* __fastcall onLerp(void* from, void* edx, void* out, const float* goal, float fraction)
+{
+	if (!g_primed) {
+		return g_lerp(from, edx, out, goal, fraction);
+	}
+
+	return g_lerp(&g_fromGoal, edx, out, reinterpret_cast<const float*>(&g_toGoal), uiStepPhase());
+}
+
+bool install(HookSet& hooks, const Target& target)
+{
+	using namespace offsets::Camera;
+
+	if (!target.matches(kApplyGoal)) {
+		log::error("{} signature mismatch at +{:#x}", kApplyGoal.name, kApplyGoal.offset);
+		return false;
+	}
+
+	g_applyGoal = reinterpret_cast<ApplyGoalFn>(target.rva(kApplyGoal.offset));
+
+	return hooks.install(kUpdateGoal, &onUpdateGoal, g_updateGoal) && hooks.install(kKeyMove, &onKeyMove, g_keyMove) &&
+	       hooks.install(offsets::CoordinateFrame::kLerp, &onLerp, g_lerp);
+}
+
+} // namespace camera
+
+namespace world {
 
 using StepFn = float(__fastcall*)(void*, void*, float);
 
 StepFn g_step = nullptr;
-double g_secondsPerTick = 0.0;
-double g_previous = 0.0;
-double g_carry = 0.0;
 
-double now() noexcept
-{
-	LARGE_INTEGER counter{};
-	QueryPerformanceCounter(&counter);
-
-	return static_cast<double>(counter.QuadPart) * g_secondsPerTick;
-}
+Frame g_frame;
+double g_pending = 0.0;
 
 float __fastcall onStep(void* self, void* edx, float)
 {
 	const double rate = rbx::worldStepsPerSec();
-	const double entered = now();
 
-	if (g_previous == 0.0) {
-		g_previous = entered;
-		return 0.0F;
-	}
+	g_pending = std::min(g_pending + g_frame.elapsed(), static_cast<double>(rbx::Constants::uiDt()));
 
-	g_carry = std::min(g_carry + std::max(0.0, entered - g_previous), kMaxCatchUp);
-	g_previous = entered;
-
-	const int steps = static_cast<int>(rate * g_carry);
+	const int steps = static_cast<int>(rate * g_pending);
 
 	if (steps < 1) {
 		return 0.0F;
 	}
 
-	g_carry -= static_cast<double>(steps) / rate;
+	g_pending -= static_cast<double>(steps) / rate;
 
 	return g_step(self, edx, static_cast<float>((steps + 0.5) / rate));
 }
 
 bool install(HookSet& hooks)
 {
-	LARGE_INTEGER frequency{};
-
-	if (QueryPerformanceFrequency(&frequency) == 0 || frequency.QuadPart == 0) {
-		log::error("no performance counter to pace the world against");
-		return false;
-	}
-
-	g_secondsPerTick = 1.0 / static_cast<double>(frequency.QuadPart);
-
 	return hooks.install(offsets::World::kStep, &onStep, g_step);
 }
 
-} // namespace worldclock
-
-namespace stepgate {
-
-using RaiseFn = void(__fastcall*)(void*, void*, float, float);
-
-RaiseFn g_raise = nullptr;
-float g_carry = 0.0F;
-
-void __fastcall onRaise(void* self, void* edx, float time, float step)
-{
-	g_carry += step;
-
-	if (g_carry < rbx::Constants::uiDt()) {
-		return;
-	}
-
-	const float delivered = g_carry;
-	g_carry = 0.0F;
-
-	g_raise(self, edx, time, delivered);
-}
-
-bool install(HookSet& hooks)
-{
-	return hooks.install(offsets::RunService::kRaiseStepped, &onRaise, g_raise);
-}
-
-} // namespace stepgate
+} // namespace world
 
 } // namespace
 
@@ -198,15 +446,19 @@ bool installFramerate(const Target& target)
 		return false;
 	}
 
-	pacer::configure();
+	runservice::configure();
 
 	HookSet hooks(target);
 
-	if (!pacer::install(hooks) || !stepgate::install(hooks)) {
+	const bool installed = runservice::install(hooks) && scriptcontext::install(hooks) && shoottool::install(hooks) &&
+	                       forcefield::install(hooks) && humanoid::install(hooks) && character::install(hooks) &&
+	                       camera::install(hooks, target);
+
+	if (!installed) {
 		return false;
 	}
 
-	if (!ownsWorldStep() && !worldclock::install(hooks)) {
+	if (!ownsWorldStep() && !world::install(hooks)) {
 		return false;
 	}
 

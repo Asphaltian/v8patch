@@ -17,8 +17,6 @@ void frictionTakesTheDullerSurface()
 	near(getFriction(0.0F, 0, 0.9F, 0), 0.0F, 1.0e-6F, "a frictionless surface wins");
 }
 
-// Measured against the 2007 engine: a brick dropped 57.6 studs rebounds with
-// these coefficients, so the law must stay sqrt of the elasticity multiplier.
 void restitutionFollowsTheLadder()
 {
 	near(getRestitution(0.0F, 0, 0.0F, 0), std::sqrt(0.28F), 1.0e-6F, "elasticity 0.00 bounces at sqrt 0.28");
@@ -37,7 +35,6 @@ void restitutionFollowsTheLadder()
 	}
 }
 
-// Restitution above one creates energy: a brick would climb higher than it fell.
 void restitutionNeverCreatesEnergy()
 {
 	for (int i = 0; i <= 20; ++i) {
@@ -46,10 +43,6 @@ void restitutionNeverCreatesEnergy()
 	}
 }
 
-// An eighth of the step rate, 30Hz at 240. b3SolverStage clamps contactHertz to
-// 0.125 / h and asking for more is not merely ignored: getContactDamping derives
-// its damping from the hertz we ask for, so a request the solver clamps away
-// leaves the pair mismatched and halves the recovery rate.
 void stiffnessMatchesTheStepRate()
 {
 	const float substepDt = Constants::worldDt();
@@ -60,8 +53,6 @@ void stiffnessMatchesTheStepRate()
 	check(getStiffestHertz(substepDt) <= 0.125F * rate, "and does not exceed the solver clamp");
 }
 
-// getContactDamping is the inverse of getBiasRate at the engine's own recovery
-// rate, so feeding one into the other must come back where it started.
 void dampingInvertsTheBiasRate()
 {
 	const float substepDt = Constants::worldDt();

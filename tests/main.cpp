@@ -9,6 +9,7 @@ void runClumps();
 void runConstants();
 void runContactlaw();
 void runContacts();
+void runFrame();
 void runHashing();
 void runStepping();
 void runWinding();
@@ -26,6 +27,7 @@ constexpr Suite kSuites[] = {
     {"constants", &runConstants},
     {"contactlaw", &runContactlaw},
     {"contacts", &runContacts},
+    {"frame", &runFrame},
     {"hashing", &runHashing},
     {"stepping", &runStepping},
     {"winding", &runWinding},

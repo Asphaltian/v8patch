@@ -30,7 +30,6 @@ void stepRates()
 
 void elasticity()
 {
-	// RBX::Constants::getElasticMultiplier, the 2007 ladder.
 	near(Constants::elasticMultiplier(0.0F), 0.28F, 1.0e-6F, "elasticity 0.00 multiplies by 0.28");
 	near(Constants::elasticMultiplier(0.2F), 0.42F, 1.0e-6F, "elasticity 0.20 multiplies by 0.42");
 	near(Constants::elasticMultiplier(0.5F), 0.57F, 1.0e-6F, "elasticity 0.50 multiplies by 0.57");
@@ -48,8 +47,6 @@ void elasticity()
 
 void jointStiffness()
 {
-	// RBX::Constants::getJointK: a 21x1.2x1 plank sorts to (1, 1.2, 21), clips to
-	// at least one stud, and takes the size.z * 0.4 branch of the multiplier table.
 	near(
 	    Constants::jointK(Vector3{21.0F, 1.2F, 1.0F}, false),
 	    21.0F * 0.4F * 960000.0F,
@@ -57,7 +54,6 @@ void jointStiffness()
 	    "a 21x1.2x1 plank stiffens to 8064000"
 	);
 
-	// A cube of one stud takes the 0.91 entry.
 	near(
 	    Constants::jointK(Vector3{1.0F, 1.0F, 1.0F}, false),
 	    0.91F * 960000.0F,
@@ -65,7 +61,6 @@ void jointStiffness()
 	    "a one stud cube stiffens to 873600"
 	);
 
-	// Below a stud the smallest axis scales the result down.
 	const float thin = Constants::jointK(Vector3{0.4F, 1.0F, 1.0F}, false);
 	near(thin, 0.4F * 0.91F * 960000.0F, 1.0F, "a 0.4 stud slab scales by its thinnest axis");
 

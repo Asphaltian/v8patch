@@ -17,8 +17,6 @@ using v8patch::rbx::Geometry;
 using v8patch::rbx::Primitive;
 using v8patch::rbx::Vector3;
 
-// The rebuild check must notice a primitive whose address is reused by a
-// different part in the same frame, which a commutative pointer sum cannot.
 void signatureOrdering()
 {
 	int a = 0;
@@ -54,8 +52,6 @@ void signatureSpreads()
 	check(seen.size() == 32, "neighbouring addresses hash apart");
 }
 
-// clumpHashOf folds in mass and geometry so an assembly built before the
-// engine filled those in is rebuilt once they arrive.
 void clumpHashTracksMass()
 {
 	v8patch::rbx::Body body{};

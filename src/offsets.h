@@ -4,7 +4,6 @@
 #include <string_view>
 
 namespace v8patch::offsets {
-
 struct Site
 {
 	std::uintptr_t offset;
@@ -32,6 +31,96 @@ inline constexpr Site kRaiseStepped{
 inline constexpr std::uintptr_t kFramePeriod = 0x19C;
 
 } // namespace RunService
+
+namespace ScriptContext {
+
+inline constexpr Site kOnHeartbeat{
+    0x1750B0,
+    "83 EC 18 53 55 8B 2D ?? ?? ?? ?? 56 8D 44 24 14 57 50 8B F1 FF D5",
+    "ScriptContext::onHeartbeat",
+};
+
+} // namespace ScriptContext
+
+namespace ShootTool {
+
+inline constexpr Site kStep{
+    0x23A460,
+    "8B 41 30 85 C0 7E 06 83 C0 FF 89 41 30 80 79 14 00 74 07 8B 01 8B 40 18 FF E0 C2 04",
+    "ShootTool::step",
+};
+
+} // namespace ShootTool
+
+namespace Camera {
+
+inline constexpr Site kKeyMove{
+    0x1D88E0,
+    "81 EC 8C 00 00 00 53 56 8B B4 24 98 00 00 00 80 3E 00 8B D9 75 34 80 7E 01 00 75 2E",
+    "Camera::keyMove",
+};
+
+inline constexpr Site kUpdateGoal{
+    0x1D6BC0,
+    "83 EC 5C 56 8B F1 8B 86 9C 01 00 00 83 C0 FF 83 F8 04 0F 87 ?? ?? ?? ?? FF 24 85",
+    "Camera::updateGoal",
+};
+
+inline constexpr Site kApplyGoal{
+    0x1D8170,
+    "83 EC 30 53 56 8B F1 57 8D BE 3C 01 00 00 57 8D 44 24 10 8D 9E F8 00 00 00",
+    "Camera::applyGoal",
+};
+
+inline constexpr std::uintptr_t kGoal = 0x13C;
+inline constexpr std::uintptr_t kGoalTranslation = 0x160;
+inline constexpr std::uintptr_t kFocusTranslation = 0x190;
+
+} // namespace Camera
+
+namespace CoordinateFrame {
+
+inline constexpr Site kLerp{
+    0x145DD0,
+    "D9 E8 83 EC 6C D9 44 24 78 56 DD E1 57 8B F1 DF E0 DD D9 F6 C4 44 7A 2E 8B 7C 24 7C",
+    "CoordinateFrame::lerp",
+};
+
+} // namespace CoordinateFrame
+
+namespace ForceField {
+
+inline constexpr Site kStep{
+    0x228890,
+    "8B 41 10 83 C0 01 56 99 BE 1E 00 00 00 F7 FE 8B 44 24 08 57 8B F8 83 EC 0C 8B C4",
+    "ForceField::step",
+};
+
+inline constexpr std::uintptr_t kPhase = 0x10;
+
+} // namespace ForceField
+
+namespace Humanoid {
+
+inline constexpr Site kSetWalkDirection{
+    0x1ED590,
+    "8B 54 24 04 D9 02 D8 99 94 01 00 00 DF E0 F6 C4 44 7A 24 D9 42 04 D8 99 98 01 00 00 DF E0 F6 C4",
+    "Humanoid::setWalkDirection",
+};
+
+inline constexpr std::uintptr_t kWalkDirection = 0x194;
+
+} // namespace Humanoid
+
+namespace ICharacterSubject {
+
+inline constexpr Site kUpdate{
+    0x23DE60,
+    "8B 44 24 04 D9 40 24 83 EC 08 53 55 8B 6C 24 18 D8 65 24 56 D9 40 28 57 D8 65 28 6A 00 D9 40 2C",
+    "ICharacterSubject::update",
+};
+
+} // namespace ICharacterSubject
 
 namespace Security {
 

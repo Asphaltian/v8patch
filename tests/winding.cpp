@@ -32,7 +32,6 @@ void firstSampleIsTheAngleItself()
 	check(winding.turns() == 0, "with no turns counted");
 }
 
-// The measured angle wraps at half a turn; the tracked angle must not.
 void trackedAngleIsContinuous()
 {
 	Winding winding;
@@ -55,7 +54,6 @@ void trackedAngleIsContinuous()
 	}
 
 	near(worst, 0.0F, 1.0e-3F, "eight seconds of spin never loses a turn");
-	// tracked = turns * 2pi + wrapped, so the count follows from the travel.
 	const int expected = static_cast<int>(std::lround((truth - wrap(truth)) / (2.0F * B3_PI)));
 
 	check(winding.turns() == expected, "the turn count matches the travel");
@@ -78,8 +76,6 @@ void spinningBackwardsCountsDown()
 	check(winding.turns() < 0, "and its turn count runs negative");
 }
 
-// Ordinary motion never crosses most of a half turn in one step, so a hinge
-// rocking about the wrap point must not invent turns.
 void rockingAboutTheWrapCountsNothing()
 {
 	Winding winding;
@@ -110,7 +106,6 @@ void wholeTurnsAccumulate()
 
 	(void)winding.track(0.0F);
 
-	// Three quarters forward each step walks the seam repeatedly.
 	float truth = 0.0F;
 
 	for (int step = 0; step < 100; ++step) {

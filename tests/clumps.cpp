@@ -61,9 +61,6 @@ void rigidJointsMergeIntoOneGroup()
 	same(static_cast<int>(found[2].size()), 2, "the pair holds two");
 }
 
-// The anchored flag lives on the group's root, and merging moves the root. An
-// anchor recorded before the merge that put it under another root would be lost
-// if it did not travel with it, and the whole assembly would fall.
 void anchoringSurvivesALaterMerge()
 {
 	for (int order = 0; order < 2; ++order) {
@@ -103,7 +100,6 @@ void unanchoredGroupsStayUnanchored()
 	check(!clumps.anchored(1), "the other pair is not");
 }
 
-// A primitive with no body is not simulated and must not reach an assembly.
 void droppedPrimitivesLeaveNoGroup()
 {
 	Clumps clumps;
