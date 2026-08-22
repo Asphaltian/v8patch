@@ -15,6 +15,7 @@ using UpdateCofmFn = void(__thiscall*)(Cofm*);
 using FromPrimitiveFn = void*(__cdecl*)(const Primitive*);
 using InForceFieldFn = bool(__cdecl*)(const void*);
 using DestroyJointsFn = void(__thiscall*)(void*);
+using ProcessClumpsFn = void(__thiscall*)(World*);
 using NotifyMovedFn = void(__thiscall*)(IMoving*);
 using TouchedFn = void(__thiscall*)(World*, Primitive*, Primitive*);
 using ExtentsChangedFn = void(__thiscall*)(void*, Primitive*);
@@ -27,6 +28,7 @@ UpdateCofmFn g_updateCofm = nullptr;
 FromPrimitiveFn g_partFromPrimitive = nullptr;
 InForceFieldFn g_partInForceField = nullptr;
 DestroyJointsFn g_destroyPartJoints = nullptr;
+ProcessClumpsFn g_processClumps = nullptr;
 NotifyMovedFn g_notifyMoved = nullptr;
 TouchedFn g_onPrimitiveTouched = nullptr;
 ExtentsChangedFn g_primitiveExtentsChanged = nullptr;
@@ -143,6 +145,7 @@ bool bind(const Target& target)
 	       adopt(target, offsets::Cofm::kUpdate, g_updateCofm) &&
 	       adopt(target, offsets::PartInstance::kFromPrimitive, g_partFromPrimitive) &&
 	       adopt(target, offsets::PartInstance::kDestroyJoints, g_destroyPartJoints) &&
+	       adopt(target, offsets::World::kProcessClumps, g_processClumps) &&
 	       adopt(target, offsets::ForceField::kPartInForceField, g_partInForceField) &&
 	       adopt(target, offsets::IMoving::kNotifyMoved, g_notifyMoved) &&
 	       adopt(target, offsets::World::kOnPrimitiveTouched, g_onPrimitiveTouched) &&
@@ -191,6 +194,13 @@ void destroyJoints(const Array<Primitive*>& found, float reach) noexcept
 		if (part != nullptr && !g_partInForceField(part)) {
 			g_destroyPartJoints(part);
 		}
+	}
+}
+
+void processClumps(World* world) noexcept
+{
+	if (world != nullptr) {
+		g_processClumps(world);
 	}
 }
 

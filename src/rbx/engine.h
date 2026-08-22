@@ -478,6 +478,7 @@ void updateSimBody(SimBody* simBody) noexcept;
 void updateCofm(Cofm* cofm) noexcept;
 void accumulateForce(SimBody* simBody, const Vector3& force, const Vector3& worldPos) noexcept;
 void destroyJoints(const Array<Primitive*>& found, float reach) noexcept;
+void processClumps(World* world) noexcept;
 void destroyJoint(World* world, Joint* joint) noexcept;
 void notifyMoved(IMoving* owner) noexcept;
 void onPrimitiveTouched(World* world, Primitive* p0, Primitive* p1) noexcept;

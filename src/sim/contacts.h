@@ -17,7 +17,7 @@ namespace v8patch::sim {
 
 [[nodiscard]] inline float getRestitution(float first, std::uint64_t, float second, std::uint64_t) noexcept
 {
-	return std::sqrt(rbx::Constants::elasticMultiplier(std::min(first, second)));
+	return rbx::Constants::elasticMultiplier(std::min(first, second));
 }
 
 [[nodiscard]] inline float getBiasRate(float hertz, float damping, float substepDt) noexcept

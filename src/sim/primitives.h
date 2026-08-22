@@ -14,7 +14,7 @@ namespace v8patch::sim {
 constexpr float kLeastExtent = 0.05F;
 constexpr float kLeastDensity = 1.0e-4F;
 
-constexpr int kSubSteps = 1;
+constexpr int kSubSteps = rbx::Constants::kernelStepsPerWorldStep();
 constexpr float kSleepVelocity = rbx::Constants::sleepVelocity();
 
 inline float angularDamping() noexcept

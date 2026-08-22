@@ -370,6 +370,7 @@ void Simulation::createGeometry(Assembly& assembly, AssemblyPrimitive& part)
 	def.baseMaterial.friction = std::max(0.0F, part.primitive->friction);
 
 	def.baseMaterial.restitution = std::max(0.0F, part.primitive->elasticity);
+	def.baseMaterial.jointK = rbx::jointK(part.primitive);
 	def.density = std::max(kLeastDensity, part.partMass / gridVolume);
 	def.updateBodyMass = false;
 	def.enableContactEvents = true;

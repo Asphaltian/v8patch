@@ -19,15 +19,13 @@ void frictionTakesTheDullerSurface()
 
 void restitutionFollowsTheLadder()
 {
-	near(getRestitution(0.0F, 0, 0.0F, 0), std::sqrt(0.28F), 1.0e-6F, "elasticity 0.00 bounces at sqrt 0.28");
-	near(getRestitution(0.2F, 0, 0.2F, 0), std::sqrt(0.42F), 1.0e-6F, "elasticity 0.20 bounces at sqrt 0.42");
-	near(getRestitution(0.5F, 0, 0.5F, 0), std::sqrt(0.57F), 1.0e-6F, "elasticity 0.50 bounces at sqrt 0.57");
-	near(getRestitution(0.7F, 0, 0.7F, 0), std::sqrt(0.80F), 1.0e-6F, "elasticity 0.70 bounces at sqrt 0.80");
-	near(getRestitution(1.0F, 0, 1.0F, 0), 1.0F, 1.0e-6F, "elasticity 1.00 bounces at one");
+	near(getRestitution(0.0F, 0, 0.0F, 0), 0.28F, 1.0e-6F, "elasticity 0.00 rebounds at 0.28 of the joint stiffness");
+	near(getRestitution(0.2F, 0, 0.2F, 0), 0.42F, 1.0e-6F, "elasticity 0.20 rebounds at 0.42 of the joint stiffness");
+	near(getRestitution(0.5F, 0, 0.5F, 0), 0.57F, 1.0e-6F, "elasticity 0.50 rebounds at 0.57 of the joint stiffness");
+	near(getRestitution(0.7F, 0, 0.7F, 0), 0.80F, 1.0e-6F, "elasticity 0.70 rebounds at 0.80 of the joint stiffness");
+	near(getRestitution(1.0F, 0, 1.0F, 0), 1.0F, 1.0e-6F, "elasticity 1.00 rebounds at the joint stiffness");
 
-	near(
-	    getRestitution(1.0F, 0, 0.0F, 0), std::sqrt(0.28F), 1.0e-6F, "a dead surface kills the bounce of a lively one"
-	);
+	near(getRestitution(1.0F, 0, 0.0F, 0), 0.28F, 1.0e-6F, "a dead surface kills the bounce of a lively one");
 
 	for (int i = 0; i <= 10; ++i) {
 		const float e = getRestitution(static_cast<float>(i) / 10.0F, 0, 1.0F, 0);

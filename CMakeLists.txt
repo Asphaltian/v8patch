@@ -94,7 +94,9 @@ add_executable(v8patch_tests
   tests/contactlaw.cpp
   tests/contacts.cpp
   tests/hashing.cpp
+  tests/ejection.cpp
   tests/frame.cpp
+  tests/settling.cpp
   tests/stepping.cpp
   tests/winding.cpp
   src/frame.cpp

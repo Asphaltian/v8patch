@@ -168,6 +168,12 @@ inline constexpr Site kRaiseAutoDestroy{
 
 inline constexpr std::uintptr_t kAutoDestroyNotifier = 0x18;
 
+inline constexpr Site kProcessClumps{
+    0x1EE3A0,
+    "56 8B 71 34 8B 06 8B 50 04 8B CE FF D2 83 F8 01 74 11 8B 76 08 8B 06 8B 50 04 8B CE FF D2",
+    "World::processClumps",
+};
+
 inline constexpr Site kComputeFallen{
     0x1EE680,
     "55 8B EC 83 E4 F8 83 EC 24 53 56 8B 71 34 8B 06 8B 50 04 57 8B CE FF D2 83 F8",

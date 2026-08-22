@@ -77,6 +77,7 @@ void __fastcall onDoBlast(void* self, void*, rbx::Array<rbx::Primitive*>* found)
 	g_simulation.doBreakJoints(world);
 
 	rbx::destroyJoints(*found, explosion.blastRadius + explosion.blastRadius);
+	rbx::processClumps(world);
 
 	g_simulation.invalidate();
 	g_simulation.update(world);

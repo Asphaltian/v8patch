@@ -68,7 +68,7 @@ bool Simulation::open()
 	def.workerCount = static_cast<std::uint32_t>(workers);
 
 	gravityStep_ = b3MulSV(rbx::Constants::worldDt(), def.gravity);
-	spinRegain_ = 1.0F + substepDt * angularDamping();
+	spinRegain_ = 1.0F + rbx::Constants::worldDt() * angularDamping();
 
 	world_ = b3CreateWorld(&def);
 
