@@ -64,7 +64,9 @@ void aRestingStackHoldsTheEngineSpacing()
 	b3BodyId stack[8]{};
 
 	for (int i = 0; i < 8; ++i) {
-		stack[i] = bed.part(kStone, b3Vec3{0.0F, 21.6F + kStone.y * static_cast<float>(i), 0.0F}, false, kElasticity, kFriction);
+		stack[i] = bed.part(
+		    kStone, b3Vec3{0.0F, 21.6F + kStone.y * static_cast<float>(i), 0.0F}, false, kElasticity, kFriction
+		);
 	}
 
 	const int slept = bed.settle(stack[7], 240 * 8);
@@ -91,7 +93,9 @@ void aWallSettlesAndSleeps()
 			const float bond = row % 2 == 0 ? 0.0F : kStone.x * 0.5F;
 			const float x = bond + kStone.x * (static_cast<float>(at) - 0.5F * static_cast<float>(kSpan - 1));
 
-			wall[row][at] = bed.part(kStone, b3Vec3{x, kStone.y * (0.5F + static_cast<float>(row)), 0.0F}, false, kElasticity, kFriction);
+			wall[row][at] = bed.part(
+			    kStone, b3Vec3{x, kStone.y * (0.5F + static_cast<float>(row)), 0.0F}, false, kElasticity, kFriction
+			);
 		}
 	}
 

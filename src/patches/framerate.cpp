@@ -333,6 +333,19 @@ rbx::Vector3 translation(const void* camera, std::uintptr_t offset) noexcept
 	return value;
 }
 
+rbx::Matrix3 rotation(const void* camera, std::uintptr_t offset) noexcept
+{
+	rbx::Matrix3 value{};
+	std::memcpy(&value, static_cast<const std::byte*>(camera) + offset, sizeof(value));
+
+	return value;
+}
+
+void setRotation(void* camera, std::uintptr_t offset, const rbx::Matrix3& value) noexcept
+{
+	std::memcpy(static_cast<std::byte*>(camera) + offset, &value, sizeof(value));
+}
+
 void keepShare(void* camera, std::uintptr_t offset, const rbx::Vector3& before, float share) noexcept
 {
 	const rbx::Vector3 after = translation(camera, offset);
@@ -355,11 +368,13 @@ void __fastcall onKeyMove(void* self, void* edx, const char* keys, int calls)
 
 	const float share = g_held.advance(g_moved.elapsed());
 
+	const rbx::Matrix3 goalRotation = rotation(self, kGoal);
 	const rbx::Vector3 goal = translation(self, kGoalTranslation);
 	const rbx::Vector3 focus = translation(self, kFocusTranslation);
 
 	g_keyMove(self, edx, keys, g_held.calls());
 
+	setRotation(self, kGoal, goalRotation);
 	keepShare(self, kGoalTranslation, goal, share);
 	keepShare(self, kFocusTranslation, focus, share);
 

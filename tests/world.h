@@ -31,21 +31,14 @@ struct Bed
 		world = b3CreateWorld(&def);
 	}
 
-	~Bed()
-	{
-		b3DestroyWorld(world);
-	}
+	~Bed() { b3DestroyWorld(world); }
 
 	Bed(const Bed&) = delete;
 	Bed& operator=(const Bed&) = delete;
 
-	void step() const
-	{
-		b3World_Step(world, rbx::Constants::worldDt(), sim::kSubSteps);
-	}
+	void step() const { b3World_Step(world, rbx::Constants::worldDt(), sim::kSubSteps); }
 
-	b3BodyId part(const rbx::Vector3& size, b3Vec3 at, bool anchored, float elasticity = 0.0F, float friction = 0.3F)
-	    const
+	b3BodyId part(rbx::Vector3 size, b3Vec3 at, bool anchored, float elasticity = 0.0F, float friction = 0.3F) const
 	{
 		b3BodyDef body = b3DefaultBodyDef();
 		body.type = anchored ? b3_staticBody : b3_dynamicBody;

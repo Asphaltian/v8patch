@@ -73,10 +73,11 @@ void runningBondCoursesTouch()
 {
 	const Vector3 brick{2.0F, 1.2F, 4.0F};
 
-	check(collide(brick, brick, b3Vec3{1.0F, 1.2F, 0.0F}) > 0, "a course laid in a running bond rests on the one below");
 	check(
-	    collide(brick, brick, b3Vec3{1.0F, 1.19F, 0.0F}) > 0,
-	    "and still touches once its own weight has bedded it in"
+	    collide(brick, brick, b3Vec3{1.0F, 1.2F, 0.0F}) > 0, "a course laid in a running bond rests on the one below"
+	);
+	check(
+	    collide(brick, brick, b3Vec3{1.0F, 1.19F, 0.0F}) > 0, "and still touches once its own weight has bedded it in"
 	);
 	check(collide(brick, brick, b3Vec3{1.0F, 1.0F, 0.0F}) > 0, "and touches while deeply overlapped");
 	check(collide(brick, brick, b3Vec3{1.0F, 1.7F, 0.0F}) == 0, "but not when it is lifted clear");
